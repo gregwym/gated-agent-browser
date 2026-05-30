@@ -15,6 +15,9 @@ const policy: SitePolicy = normalizePolicy({
     navigate: "allow",
     click: "allow",
     fill: "requireExplicitAllow",
+    press: "allow",
+    screenshotSelector: "requireExplicitAllow",
+    screenshotFullPage: "deny",
     evaluateScript: "deny",
   },
 });
@@ -57,6 +60,7 @@ describe("decideUrl", () => {
 describe("decideAction", () => {
   it("allows explicitly allowed actions", () => {
     assert.deepEqual(decideAction(policy, "click"), { ok: true });
+    assert.deepEqual(decideAction(policy, "press"), { ok: true });
   });
 
   it("blocks actions that need explicit grants", () => {

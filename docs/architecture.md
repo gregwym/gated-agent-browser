@@ -12,6 +12,13 @@ receive page snapshots, allowed text, allowed screenshots, and structured block
 reasons, but it will not receive raw cookies, profile paths, CDP endpoints, saved
 auth state, HAR files, clipboard contents, or unconstrained browser control.
 
+The implementation should use a two-layer model:
+
+- TypeScript CLI and policy layer first, for fast iteration on command parsing,
+  policy schema, tests, and fixture coverage.
+- A later Rust broker for the privileged runtime boundary once the request
+  protocol and enforcement semantics are stable.
+
 ## Evidence
 
 Verified facts:
@@ -43,7 +50,9 @@ Inferences:
 
 Current local status:
 
-- This repo currently has requirements and no implementation scaffold.
+- This repo currently has requirements, this architecture document, and a small
+  TypeScript scaffold for policy loading, policy decisions, and a `policy-check`
+  CLI.
 - `agent-browser` is not installed on this machine, so design claims about exact
   runtime behavior should be re-verified after the implementation pins and
   installs a specific version.
@@ -140,7 +149,8 @@ actions:
   press: allow
   readText: allow
   snapshot: allow
-  screenshot: requireExplicitAllow
+  screenshotSelector: requireExplicitAllow
+  screenshotFullPage: deny
   submitForm: requireExplicitAllow
   download: deny
   upload: deny
@@ -173,6 +183,7 @@ Agent-facing commands to support first:
 - `browse press <key>`
 - `browse wait <selector|ms|--url|--load>`
 - `browse scroll <direction> [px]`
+- `browse screenshot <selector>`
 - `browse close`
 - `browse batch --json`
 
@@ -196,8 +207,13 @@ Commands denied in the first version:
 - raw `mouse`, `keyboard`, `drag`, `window`, unrestricted `tab`
 - `trace`, `profiler`, full console dump unless explicitly added later
 
-Screenshots should be denied by default and enabled only per policy, because
-screenshots can capture secrets outside the intended selector/text surface.
+Selector-scoped screenshots may be enabled per policy. Full-page screenshots
+should remain denied in the first version because they can capture secrets
+outside the intended selector/text surface.
+
+`press` may be allowed by default on permitted pages. `fill` should require an
+additional policy grant because it can disclose user-provided text into a page,
+trigger autocomplete, or prepare a form submission.
 
 ## Request Flow
 
@@ -268,6 +284,33 @@ Post-action checks:
 - output is redacted or denied if it includes forbidden internals;
 - audit event is written.
 
+## macOS Isolation
+
+Initial macOS implementation should use strict per-directory permissions for the
+broker-owned profile and session directories, with the TypeScript CLI never
+printing profile paths or browser internals.
+
+This is the smallest useful boundary for local development. It is not as strong
+as running the broker as a separate OS user, but it avoids making the first
+installer depend on user creation, launchd service management, and uninstall
+cleanup before the policy model is proven.
+
+The three isolation levels differ like this:
+
+- Strict per-directory permissions: easiest to ship; protects against accidental
+  reads by normal tooling, but shares the same user account and is weaker against
+  a malicious local process running as that user.
+- launchd service ownership: broker lifecycle is managed by launchd and can own
+  the profile directory more cleanly; better operational boundary, more installer
+  complexity.
+- Separate local user: strongest local OS boundary for profile files and broker
+  execution; highest setup, permission, UI login, and teardown complexity.
+
+The design should keep the broker API compatible with a later launchd or
+separate-user runtime. In other words, the CLI must already treat the broker as
+the only holder of profile paths, even while the first broker is still
+implemented in TypeScript.
+
 ## Audit Events
 
 Use JSON Lines:
@@ -325,7 +368,8 @@ Integration tests with fixture server:
 - iframe navigation observed and logged;
 - download/upload denied;
 - form submit denied unless policy explicitly allows it;
-- screenshot denied by default;
+- full-page screenshot denied by default;
+- selector-scoped screenshot allowed only with explicit policy;
 - broker crash leaves no profile path in agent output.
 
 Manual tests:
@@ -348,16 +392,20 @@ Only after the local broker passes the fixture suite should the project add
 remote headed login, one-time approvals, built-in templates, and OS-specific
 installers.
 
-## Open Questions
+## Closed Decisions
 
-- Should the implementation language be Rust, TypeScript, or a two-layer model
-  with a TypeScript CLI and a later Rust broker?
-- Which OS isolation should be mandatory on macOS for the first release: a
-  separate local user, launchd service ownership, or strict per-directory
-  permissions?
-- Should `fill` and `press` be enabled by default on allowed pages, or require a
-  form-specific policy from the beginning?
+- Implementation language: use a two-layer model. Start with TypeScript for the
+  CLI, policy layer, fake browser adapter, and fixture tests; add a Rust broker
+  after the broker protocol stabilizes.
+- macOS isolation: start with strict per-directory permissions, while keeping
+  the broker API compatible with later launchd service ownership or separate OS
+  user isolation.
+- Keyboard/input policy: allow `press` by default on permitted pages; require an
+  additional explicit policy grant for `fill`.
+- Screenshots: support selector-scoped screenshots before full-page screenshots.
+  Full-page screenshots remain denied by default.
+
+## Remaining Open Questions
+
 - How much iframe visibility can be obtained through upstream `agent-browser`
   without depending on private internals?
-- Should screenshots support selector-scoped capture before full-page capture?
-

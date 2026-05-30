@@ -16,7 +16,8 @@ actions:
   press: allow
   readText: allow
   snapshot: allow
-  screenshot: requireExplicitAllow
+  screenshotSelector: requireExplicitAllow
+  screenshotFullPage: deny
   submitForm: requireExplicitAllow
   download: deny
   upload: deny
