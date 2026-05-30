@@ -1,0 +1,32 @@
+version: 1
+site: github.com
+canonicalOrigin: https://github.com
+origins:
+  allow:
+    - https://github.com/gregwym/gated-agent-browser/**
+  auth:
+    - https://github.com/login/**
+  deny:
+    - https://github.com/gregwym/gated-agent-browser/settings/delete/**
+actions:
+  navigate: allow
+  click: allow
+  fill: requireExplicitAllow
+  type: requireExplicitAllow
+  press: allow
+  readText: allow
+  snapshot: allow
+  screenshot: requireExplicitAllow
+  submitForm: requireExplicitAllow
+  download: deny
+  upload: deny
+  evaluateScript: deny
+  cookies: deny
+  storage: deny
+sensitiveSelectors: []
+destructiveSelectors:
+  - '[data-testid*="delete" i]'
+  - 'button:has-text("Delete")'
+ttl: 7d
+createdAt: "2026-05-30T00:00:00Z"
+updatedAt: "2026-05-30T00:00:00Z"

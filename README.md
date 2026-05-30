@@ -15,4 +15,37 @@ The wrapper should enforce policy at the command/action layer and at browser nav
 
 ## Current Status
 
-This repository currently contains the initial requirements draft in [docs/requirements.md](docs/requirements.md).
+This repository currently contains:
+
+- [Requirements](docs/requirements.md)
+- [Architecture](docs/architecture.md)
+- A first TypeScript scaffold for policy loading and policy decisions
+
+## Development
+
+Requirements:
+
+- Node.js 24+
+- npm
+
+Install dependencies:
+
+```sh
+npm install
+```
+
+Run tests:
+
+```sh
+npm test
+```
+
+Try the current policy checker:
+
+```sh
+npm run build
+node dist/cli.js policy-check \
+  --policy examples/github.policy.yaml \
+  --action navigate \
+  --url https://github.com/gregwym/gated-agent-browser/issues
+```

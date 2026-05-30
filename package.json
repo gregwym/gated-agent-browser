@@ -1,0 +1,27 @@
+{
+  "name": "gated-agent-browser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Policy-gated wrapper around agent-browser.",
+  "type": "module",
+  "bin": {
+    "gated-agent-browser": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/**/*.test.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "minimatch": "^10.1.1",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

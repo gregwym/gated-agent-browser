@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+import { Command } from "commander";
+import { decideAction, decideUrl, loadPolicy } from "./policy.js";
+
+const program = new Command();
+
+program
+  .name("gated-agent-browser")
+  .description("Policy-gated wrapper around agent-browser")
+  .version("0.1.0");
+
+program
+  .command("policy-check")
+  .description("Check whether a policy allows an action and optional URL")
+  .requiredOption("--policy <path>", "Path to a site policy YAML file")
+  .requiredOption("--action <name>", "Action name to check")
+  .option("--url <url>", "URL to check against policy")
+  .option("--auth", "Allow auth-origin patterns while checking URL")
+  .action(async (options: { policy: string; action: string; url?: string; auth?: boolean }) => {
+    const policy = await loadPolicy(options.policy);
+    const actionDecision = decideAction(policy, options.action);
+    if (!actionDecision.ok) {
+      printDecision(actionDecision);
+      process.exitCode = 2;
+      return;
+    }
+
+    if (options.url) {
+      const urlDecision = decideUrl(policy, options.url, { allowAuth: options.auth });
+      printDecision(urlDecision);
+      if (!urlDecision.ok) {
+        process.exitCode = 2;
+      }
+      return;
+    }
+
+    printDecision(actionDecision);
+  });
+
+program.parseAsync().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  process.exitCode = 1;
+});
+
+function printDecision(decision: unknown): void {
+  console.log(JSON.stringify(decision, null, 2));
+}
