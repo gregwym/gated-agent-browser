@@ -19,6 +19,8 @@ This repository currently contains:
 
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Autonomous development instructions](AGENTS.md)
 - A first TypeScript scaffold for policy loading and policy decisions
 
 ## Development
