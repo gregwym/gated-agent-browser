@@ -1,8 +1,8 @@
-# GateLens Requirements
+# gated-agent-browser Requirements
 
 ## Summary
 
-GateLens is a secure wrapper for `agent-browser`. It keeps the user-facing command style close to `agent-browser`, but exposes only the minimum command set and applies policy checks or behavior changes before browser actions reach the underlying browser runtime.
+gated-agent-browser is a secure wrapper for `agent-browser`. It keeps the user-facing command style close to `agent-browser`, but exposes only the minimum command set and applies policy checks or behavior changes before browser actions reach the underlying browser runtime.
 
 The main security boundary is between:
 
@@ -34,11 +34,11 @@ The agent should never receive direct access to the human's headed browser profi
 
 ## Installation And Setup
 
-GateLens should provide one-command setup and teardown.
+gated-agent-browser should provide one-command setup and teardown.
 
 Setup should install:
 
-- the `gatelens` CLI;
+- the `gated-agent-browser` CLI;
 - required browser/runtime dependencies;
 - an isolated OS user or equivalent sandbox boundary;
 - directories for profiles, policies, logs, and templates;
@@ -56,16 +56,16 @@ Destructive uninstall modes must be explicit.
 
 ## Command Surface
 
-GateLens should keep the command shape close to `agent-browser`, but expose only commands that can be mediated safely.
+gated-agent-browser should keep the command shape close to `agent-browser`, but expose only commands that can be mediated safely.
 
 Initial command groups:
 
-- `gatelens login <url>`: start a human headed login flow.
-- `gatelens policy list`: list configured site policies.
-- `gatelens policy show <site>`: inspect one policy.
-- `gatelens policy edit <site>`: manually edit a policy.
-- `gatelens revoke <site>`: revoke a site's session and policy.
-- `gatelens browse ...`: run allowed headless browsing commands.
+- `gated-agent-browser login <url>`: start a human headed login flow.
+- `gated-agent-browser policy list`: list configured site policies.
+- `gated-agent-browser policy show <site>`: inspect one policy.
+- `gated-agent-browser policy edit <site>`: manually edit a policy.
+- `gated-agent-browser revoke <site>`: revoke a site's session and policy.
+- `gated-agent-browser browse ...`: run allowed headless browsing commands.
 
 High-risk commands should be omitted or disabled by default:
 
@@ -79,7 +79,7 @@ High-risk commands should be omitted or disabled by default:
 
 ## Login Flow
 
-`gatelens login <url>` starts a headed browser for a human to authenticate.
+`gated-agent-browser login <url>` starts a headed browser for a human to authenticate.
 
 Required behavior:
 
@@ -123,7 +123,7 @@ Rules must handle redirects, links, popups, iframes, downloads, and JavaScript-t
 
 ## Policy Configuration
 
-After login, GateLens should configure what the agent may access.
+After login, gated-agent-browser should configure what the agent may access.
 
 Policy sources:
 
@@ -211,7 +211,7 @@ The agent should receive an opaque session id, not raw cookies or profile files.
 
 ## Threat Model
 
-GateLens should defend against:
+gated-agent-browser should defend against:
 
 - agent attempts to browse outside the intended site;
 - prompt injection from webpage content;
@@ -220,7 +220,7 @@ GateLens should defend against:
 - other local users or processes reusing a headed login session;
 - policy bypass through redirects, popups, iframes, downloads, uploads, or service workers.
 
-GateLens does not by itself defend against:
+gated-agent-browser does not by itself defend against:
 
 - a fully compromised host OS;
 - a malicious browser binary;
@@ -245,7 +245,7 @@ If remote headed login is supported, it must include:
 
 ## Audit Logs
 
-GateLens should record:
+gated-agent-browser should record:
 
 - login start and completion;
 - user/account that initiated login;
@@ -261,7 +261,7 @@ Logs should avoid storing sensitive full page contents by default.
 
 ## User Approval Flow
 
-When a headless command is blocked, GateLens should support:
+When a headless command is blocked, gated-agent-browser should support:
 
 - deny and return the reason;
 - request one-time user approval;
@@ -272,7 +272,7 @@ One-time approvals should be logged and expire.
 
 ## Data Retention
 
-GateLens should define defaults for:
+gated-agent-browser should define defaults for:
 
 - session expiration;
 - profile cleanup;
