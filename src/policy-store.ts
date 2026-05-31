@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { spawn } from "node:child_process";
+import { appendAuditEvent } from "./audit.js";
 import YAML from "yaml";
 import { loadPolicy, normalizePolicy, type SitePolicy } from "./policy.js";
 import { storageLayout, type StorageLayout } from "./storage.js";
@@ -100,8 +101,18 @@ export async function editPolicy(
 
   try {
     await runEditor(editor, tempPath);
-    normalizePolicy(YAML.parse(await readFile(tempPath, "utf8")));
+    const normalized = normalizePolicy(YAML.parse(await readFile(tempPath, "utf8")));
     await rename(tempPath, policyPath);
+    await appendAuditEvent(
+      {
+        type: "policy.updated",
+        timestamp: new Date().toISOString(),
+        siteId: normalized.site,
+        policyPath: basename(policyPath),
+        outcome: "allowed",
+      },
+      layout,
+    );
     return { ok: true, site, saved: true };
   } catch (error) {
     await unlink(tempPath).catch(() => undefined);

@@ -1,3 +1,4 @@
+import { appendAuditEvent } from "./audit.js";
 import { createSession, loadSession, profileDirectory, type PublicSessionSummary } from "./session-store.js";
 import { savePolicy } from "./policy-store.js";
 import { initializeStorage, storageLayout, type StorageLayout } from "./storage.js";
@@ -50,6 +51,17 @@ export async function startLogin(url: string, options: LoginOptions = {}): Promi
   const boundary = siteBoundaryFromUrl(url);
   const timestamp = now();
   await initializeStorage(layout.home);
+  await appendAuditEvent(
+    {
+      type: "login.start",
+      timestamp,
+      siteId: boundary.siteId,
+      url: boundary.initialUrl,
+      resetSiteDataRequested: true,
+      outcome: "started",
+    },
+    layout,
+  );
 
   const session = await createSession({
     siteId: boundary.siteId,
@@ -68,6 +80,28 @@ export async function startLogin(url: string, options: LoginOptions = {}): Promi
     resetSiteData: true,
   });
   const policy = await savePolicy(defaultPolicyDraft(boundary, timestamp), { layout });
+  await appendAuditEvent(
+    {
+      type: "policy.created",
+      timestamp,
+      siteId: boundary.siteId,
+      policyPath: policy.path,
+      outcome: "allowed",
+    },
+    layout,
+  );
+  await appendAuditEvent(
+    {
+      type: "login.complete",
+      timestamp,
+      siteId: boundary.siteId,
+      sessionId: session.sessionId,
+      url: boundary.initialUrl,
+      resetSiteDataRequested: true,
+      outcome: "completed",
+    },
+    layout,
+  );
 
   return {
     ok: true,

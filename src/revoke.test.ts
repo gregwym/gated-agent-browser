@@ -3,6 +3,7 @@ import { mkdtemp, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
+import { readAuditEvents } from "./audit.js";
 import { startLogin } from "./login.js";
 import { revokeSite } from "./revoke.js";
 import { listSessions } from "./session-store.js";
@@ -34,6 +35,10 @@ describe("revokeSite", () => {
     assert.deepEqual(await readdir(join(layout.dirs.policies, "revoked")), [
       "github.com.2026-05-31T01-00-00-000Z.yaml",
     ]);
+    assert.deepEqual(
+      (await readAuditEvents(layout)).map((event) => event.type),
+      ["login.start", "policy.created", "login.complete", "session.revoked", "policy.revoked"],
+    );
   });
 
   it("is deterministic when site data is already missing", async () => {

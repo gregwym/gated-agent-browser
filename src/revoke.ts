@@ -1,3 +1,4 @@
+import { appendAuditEvent } from "./audit.js";
 import { archivePolicy } from "./policy-store.js";
 import { listSessions, revokeSession } from "./session-store.js";
 import { initializeStorage, storageLayout, type StorageLayout } from "./storage.js";
@@ -25,9 +26,30 @@ export async function revokeSite(site: string, options: RevokeSiteOptions = {}):
   for (const session of activeSessions) {
     const result = await revokeSession(session.sessionId, { revokedAt, layout });
     revokedSessions.push(result.sessionId);
+    await appendAuditEvent(
+      {
+        type: "session.revoked",
+        timestamp: revokedAt,
+        siteId: result.siteId,
+        sessionId: result.sessionId,
+        outcome: "allowed",
+      },
+      layout,
+    );
   }
 
   const policy = await archivePolicy(site, { archivedAt: revokedAt, layout });
+  if (policy.archived) {
+    await appendAuditEvent(
+      {
+        type: "policy.revoked",
+        timestamp: revokedAt,
+        siteId: site,
+        outcome: "allowed",
+      },
+      layout,
+    );
+  }
   return {
     ok: true,
     site,

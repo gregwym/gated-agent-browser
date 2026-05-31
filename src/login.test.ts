@@ -3,6 +3,7 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
+import { readAuditEvents } from "./audit.js";
 import { startLogin, siteBoundaryFromUrl, type LoginAdapterStartOptions } from "./login.js";
 import { loadPolicy } from "./policy.js";
 import { policyFilePath } from "./policy-store.js";
@@ -60,6 +61,10 @@ describe("startLogin", () => {
     assert.equal(policy.actions.download, "deny");
     assert.deepEqual(policy.origins.allow, ["https://github.com/**"]);
     assert.match(await readFile(policyFilePath("github.com", layout), "utf8"), /destructiveSelectors/);
+    assert.deepEqual(
+      (await readAuditEvents(layout)).map((event) => event.type),
+      ["login.start", "policy.created", "login.complete"],
+    );
   });
 
   it("does not create session files for invalid urls", async () => {

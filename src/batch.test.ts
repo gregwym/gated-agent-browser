@@ -69,6 +69,7 @@ describe("normalizeBatchInput", () => {
 describe("runBatch", () => {
   it("executes all commands after every action and URL validates", async () => {
     const executor = new RecordingExecutor();
+    const events: unknown[] = [];
     const result = await runBatch(
       policy,
       normalizeBatchInput({
@@ -82,16 +83,21 @@ describe("runBatch", () => {
         ],
       }),
       executor,
-      { now: () => "2026-05-31T00:00:00.000Z" },
+      { now: () => "2026-05-31T00:00:00.000Z", audit: async (event) => void events.push(event) },
     );
 
     assert.equal(result.ok, true);
     assert.equal(executor.requests.length, 2);
     assert.deepEqual(executor.requests.map((request) => request.requestId), ["batch_1", "batch_2"]);
+    assert.deepEqual(
+      events.map((event) => (event as { outcome: string }).outcome),
+      ["allowed", "allowed"],
+    );
   });
 
   it("rejects the whole batch before execution when an action is denied", async () => {
     const executor = new RecordingExecutor();
+    const events: unknown[] = [];
     const result = await runBatch(
       policy,
       normalizeBatchInput({
@@ -105,6 +111,7 @@ describe("runBatch", () => {
         ],
       }),
       executor,
+      { audit: async (event) => void events.push(event) },
     );
 
     assert.deepEqual(result, {
@@ -119,6 +126,7 @@ describe("runBatch", () => {
       },
     });
     assert.equal(executor.requests.length, 0);
+    assert.deepEqual(events.map((event) => (event as { outcome: string }).outcome), ["blocked"]);
   });
 
   it("rejects the whole batch before execution when a target URL is outside policy", async () => {

@@ -160,7 +160,13 @@ actions:
     );
 
     await assert.rejects(
-      async () => execFileAsync(process.execPath, ["dist/cli.js", "browse", "batch", "--policy", policyPath, "--json", batchPath]),
+      async () =>
+        execFileAsync(process.execPath, ["dist/cli.js", "browse", "batch", "--policy", policyPath, "--json", batchPath], {
+          env: {
+            ...process.env,
+            GATED_AGENT_BROWSER_HOME: home,
+          },
+        }),
       (error: unknown) => {
         assert.equal((error as { code?: number }).code, 2);
         const stdout = (error as { stdout?: string }).stdout ?? "";

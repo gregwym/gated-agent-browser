@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { appendAuditEvent } from "./audit.js";
 import { AdapterBatchExecutor, loadBatchInput, runBatch } from "./batch.js";
 import { FakeBrowserAdapter } from "./browser-adapter.js";
 import { startLogin } from "./login.js";
@@ -73,7 +74,9 @@ browse
   .action(async (options: { policy: string; json: string }) => {
     const sitePolicy = await loadPolicy(options.policy);
     const input = await loadBatchInput(options.json);
-    const result = await runBatch(sitePolicy, input, new AdapterBatchExecutor(sitePolicy, new FakeBrowserAdapter()));
+    const result = await runBatch(sitePolicy, input, new AdapterBatchExecutor(sitePolicy, new FakeBrowserAdapter()), {
+      audit: (event) => appendAuditEvent(event),
+    });
     printDecision(result);
     if (!result.ok) {
       process.exitCode = 2;
