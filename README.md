@@ -51,3 +51,12 @@ node dist/cli.js policy-check \
   --action navigate \
   --url https://github.com/gregwym/gated-agent-browser/issues
 ```
+
+Initialize local storage:
+
+```sh
+GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev node dist/cli.js init
+```
+
+The `init` command creates broker-owned storage directories with restrictive
+permissions and does not print profile or session directory paths.

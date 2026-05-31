@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { decideAction, decideUrl, loadPolicy } from "./policy.js";
+import { initializeStorage } from "./storage.js";
 
 const program = new Command();
 
@@ -8,6 +9,13 @@ program
   .name("gated-agent-browser")
   .description("Policy-gated wrapper around agent-browser")
   .version("0.1.0");
+
+program
+  .command("init")
+  .description("Initialize gated-agent-browser local storage")
+  .action(async () => {
+    printDecision(await initializeStorage());
+  });
 
 program
   .command("policy-check")
