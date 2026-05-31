@@ -8,6 +8,7 @@ import { decideAction, decideUrl, loadPolicy } from "./policy.js";
 import { editPolicy, listPolicies, showPolicy } from "./policy-store.js";
 import { revokeSite } from "./revoke.js";
 import { setup } from "./setup.js";
+import { teardown } from "./teardown.js";
 import { initializeStorage } from "./storage.js";
 
 const program = new Command();
@@ -30,6 +31,28 @@ program
   .action(async () => {
     printDecision(await setup());
   });
+
+program
+  .command("teardown")
+  .description("Plan or run explicit local data teardown")
+  .option("--confirm", "Actually remove selected categories")
+  .option("--policies", "Remove active policy files")
+  .option("--sessions", "Remove session metadata files")
+  .option("--profiles", "Remove broker-owned profile directories")
+  .option("--logs", "Remove audit log files")
+  .option("--revoked-policies", "Remove archived revoked policy files")
+  .action(
+    async (options: {
+      confirm?: boolean;
+      policies?: boolean;
+      sessions?: boolean;
+      profiles?: boolean;
+      logs?: boolean;
+      revokedPolicies?: boolean;
+    }) => {
+      printDecision(await teardown(options));
+    },
+  );
 
 program
   .command("login")
