@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises";
 import {
+  auditEvent,
   blockedResponse,
   type BrokerAction,
+  type BrokerAuditEvent,
   type BrokerRequest,
   type BrokerRequestTarget,
   type BrokerResponse,
@@ -54,19 +56,26 @@ export async function runBatch(
   policy: SitePolicy,
   input: BrowseBatchInput,
   executor: BatchExecutor,
-  options: { now?: () => string } = {},
+  options: { now?: () => string; audit?: (event: BrokerAuditEvent) => Promise<void> } = {},
 ): Promise<BrowseBatchResult> {
   const requests = input.commands.map((command, index) =>
     commandToRequest(input, command, index, options.now ?? (() => new Date().toISOString())),
   );
   const block = firstBlocked(policy, requests);
   if (block) {
-    return block;
+    if (options.audit) {
+      await options.audit(block.auditEvent);
+    }
+    return block.result;
   }
 
   const responses: BrokerResponse[] = [];
   for (const request of requests) {
-    responses.push(await executor.execute(request));
+    const response = await executor.execute(request);
+    responses.push(response);
+    if (options.audit) {
+      await options.audit(auditEvent(request, response));
+    }
   }
   return { ok: true, responses };
 }
@@ -112,35 +121,45 @@ function commandToRequest(
   };
 }
 
-function firstBlocked(policy: SitePolicy, requests: BrokerRequest[]): BrowseBatchBlocked | null {
+function firstBlocked(
+  policy: SitePolicy,
+  requests: BrokerRequest[],
+): { result: BrowseBatchBlocked; auditEvent: BrokerAuditEvent } | null {
   for (let index = 0; index < requests.length; index += 1) {
     const request = requests[index];
     const actionDecision = decideAction(policy, request.action);
     if (!actionDecision.ok) {
-      return batchBlock(index, blockedResponse(request, actionDecision));
+      return batchBlock(index, request, blockedResponse(request, actionDecision));
     }
 
     if (request.target.kind === "url") {
       const urlDecision = decideUrl(policy, request.target.url);
       if (!urlDecision.ok) {
-        return batchBlock(index, blockedResponse(request, urlDecision));
+        return batchBlock(index, request, blockedResponse(request, urlDecision));
       }
     }
   }
   return null;
 }
 
-function batchBlock(commandIndex: number, response: Extract<BrokerResponse, { ok: false }>): BrowseBatchBlocked {
+function batchBlock(
+  commandIndex: number,
+  request: BrokerRequest,
+  response: Extract<BrokerResponse, { ok: false }>,
+): { result: BrowseBatchBlocked; auditEvent: BrokerAuditEvent } {
   return {
-    ok: false,
-    blocked: {
-      rule: response.blocked.rule,
-      reason: response.blocked.reason,
-      commandIndex,
-      requestId: response.requestId,
-      action: response.action,
-      url: response.blocked.url,
+    result: {
+      ok: false,
+      blocked: {
+        rule: response.blocked.rule,
+        reason: response.blocked.reason,
+        commandIndex,
+        requestId: response.requestId,
+        action: response.action,
+        url: response.blocked.url,
+      },
     },
+    auditEvent: auditEvent(request, response),
   };
 }
 
