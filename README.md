@@ -21,7 +21,23 @@ This repository currently contains:
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Autonomous development instructions](AGENTS.md)
-- A first TypeScript scaffold for policy loading and policy decisions
+- A TypeScript CLI and broker contract for policy-gated browsing
+- Restricted local storage for policies, sessions, logs, approvals, and profiles
+- Opaque session metadata and policy draft creation through `login <url>`
+- Policy list/show/edit, site revoke, setup, and teardown commands
+- Batch browse validation with all-or-nothing rejection
+- Fake and fixture browser adapters for deterministic enforcement tests
+- JSONL audit logging for broker, login, policy, and revoke events
+
+Current security boundary:
+
+- The broker is still TypeScript and local-process based.
+- Profile directories are created with strict local permissions and are not
+  printed in normal CLI output.
+- There is no separate OS user or launchd-owned broker yet.
+- Real browser execution is behind the pinned `agent-browser@0.27.0` subprocess
+  adapter, but most enforcement is currently verified through deterministic
+  fake/fixture adapters.
 
 ## Development
 
@@ -44,6 +60,17 @@ Run tests:
 npm test
 ```
 
+Run full verification:
+
+```sh
+npm run verify
+```
+
+Current verification covers policy decisions, batch pre-validation, session
+metadata, login draft flow, revoke, audit logs, setup/teardown, runtime URL
+escape fixtures, file transfer/form denial, selector enforcement, and
+prompt-injection fixtures.
+
 Try the current policy checker:
 
 ```sh
@@ -63,10 +90,44 @@ GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev node dist/cli.js init
 The `init` command creates broker-owned storage directories with restrictive
 permissions and does not print profile or session directory paths.
 
+Set up local storage and report lightweight prerequisites:
+
+```sh
+GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev node dist/cli.js setup
+```
+
 Inspect policies:
 
 ```sh
 node dist/cli.js policy list
 node dist/cli.js policy show github.com
 EDITOR=vim node dist/cli.js policy edit github.com
+```
+
+Create a login draft and opaque session:
+
+```sh
+GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev \
+  node dist/cli.js login https://github.com/login
+```
+
+Revoke a site:
+
+```sh
+GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev \
+  node dist/cli.js revoke github.com
+```
+
+Plan teardown without deleting data:
+
+```sh
+GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev \
+  node dist/cli.js teardown --sessions --profiles
+```
+
+Actually remove selected local data requires both category flags and `--confirm`:
+
+```sh
+GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev \
+  node dist/cli.js teardown --sessions --logs --confirm
 ```
