@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { DryRunExecutor, loadBatchInput, runBatch } from "./batch.js";
+import { AdapterBatchExecutor, loadBatchInput, runBatch } from "./batch.js";
+import { FakeBrowserAdapter } from "./browser-adapter.js";
 import { decideAction, decideUrl, loadPolicy } from "./policy.js";
 import { editPolicy, listPolicies, showPolicy } from "./policy-store.js";
 import { initializeStorage } from "./storage.js";
@@ -54,7 +55,7 @@ browse
   .action(async (options: { policy: string; json: string }) => {
     const sitePolicy = await loadPolicy(options.policy);
     const input = await loadBatchInput(options.json);
-    const result = await runBatch(sitePolicy, input, new DryRunExecutor());
+    const result = await runBatch(sitePolicy, input, new AdapterBatchExecutor(sitePolicy, new FakeBrowserAdapter()));
     printDecision(result);
     if (!result.ok) {
       process.exitCode = 2;

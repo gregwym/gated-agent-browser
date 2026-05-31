@@ -367,6 +367,25 @@ URL is denied, the entire batch is rejected and no command executes:
 }
 ```
 
+## Browser Adapter Interface
+
+Runtime browser integrations sit behind a narrow adapter:
+
+```ts
+interface BrowserAdapter {
+  perform(request: BrokerRequest): Promise<{
+    finalUrl?: string;
+    result?: BrokerResult;
+  }>;
+}
+```
+
+The policy broker executor performs pre-action policy checks, calls the adapter
+only for allowed requests, then validates the adapter-reported `finalUrl`.
+Fixture tests use an in-memory fake adapter that simulates navigation and
+redirects without network access or real browser binaries. The future
+`agent-browser` subprocess adapter should implement the same interface.
+
 ## Login Flow
 
 `login <url>` is human-facing:
