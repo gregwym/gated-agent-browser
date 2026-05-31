@@ -2,7 +2,8 @@
 
 ## Current Milestone
 
-M4 — Setup Teardown And Release Hygiene
+None. Roadmap is complete through M4; see Later Milestones for remaining
+explicitly unimplemented work.
 
 ## M1 — Policy-gated CLI MVP
 
@@ -62,7 +63,7 @@ Expected scope:
 
 ## M4 — Setup Teardown And Release Hygiene
 
-Status: in progress.
+Status: complete. Implemented through issues #32-#34 and #38.
 
 Goal: setup and teardown commands are explicit, redacted, and safe by default,
 and the docs match the implemented security boundary.
