@@ -15,6 +15,10 @@ export interface SessionMetadata {
   updatedAt: string;
   expiresAt?: string;
   revokedAt?: string;
+  login?: {
+    initialUrl: string;
+    resetSiteDataRequested: boolean;
+  };
 }
 
 export interface PublicSessionSummary {
@@ -26,6 +30,10 @@ export interface PublicSessionSummary {
   updatedAt: string;
   expiresAt?: string;
   revokedAt?: string;
+  login?: {
+    initialUrl: string;
+    resetSiteDataRequested: boolean;
+  };
 }
 
 export interface CreateSessionOptions {
@@ -34,6 +42,10 @@ export interface CreateSessionOptions {
   profileId?: string;
   createdAt?: string;
   expiresAt?: string;
+  login?: {
+    initialUrl: string;
+    resetSiteDataRequested: boolean;
+  };
   layout?: StorageLayout;
 }
 
@@ -59,6 +71,7 @@ export async function createSession(options: CreateSessionOptions): Promise<Publ
     createdAt: now,
     updatedAt: now,
     expiresAt: options.expiresAt,
+    login: options.login,
   };
 
   await mkdir(layout.dirs.sessions, { recursive: true, mode: 0o700 });
@@ -128,6 +141,9 @@ export function publicSessionSummary(session: SessionMetadata): PublicSessionSum
   if (session.revokedAt) {
     summary.revokedAt = session.revokedAt;
   }
+  if (session.login) {
+    summary.login = session.login;
+  }
   return summary;
 }
 
@@ -167,6 +183,20 @@ function normalizeSession(value: unknown): SessionMetadata {
     updatedAt: expectString(value.updatedAt, "updatedAt"),
     expiresAt: optionalString(value.expiresAt, "expiresAt"),
     revokedAt: optionalString(value.revokedAt, "revokedAt"),
+    login: optionalLogin(value.login),
+  };
+}
+
+function optionalLogin(value: unknown): SessionMetadata["login"] {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (!isRecord(value)) {
+    throw new Error("login must be an object");
+  }
+  return {
+    initialUrl: expectString(value.initialUrl, "login.initialUrl"),
+    resetSiteDataRequested: expectBoolean(value.resetSiteDataRequested, "login.resetSiteDataRequested"),
   };
 }
 
@@ -187,6 +217,13 @@ function expectNumber(value: unknown, path: string): 1 {
 function expectString(value: unknown, path: string): string {
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(`${path} must be a non-empty string`);
+  }
+  return value;
+}
+
+function expectBoolean(value: unknown, path: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new Error(`${path} must be a boolean`);
   }
   return value;
 }
