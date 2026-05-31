@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { decideAction, decideUrl, loadPolicy } from "./policy.js";
+import { editPolicy, listPolicies, showPolicy } from "./policy-store.js";
 import { initializeStorage } from "./storage.js";
 
 const program = new Command();
@@ -15,6 +16,31 @@ program
   .description("Initialize gated-agent-browser local storage")
   .action(async () => {
     printDecision(await initializeStorage());
+  });
+
+const policy = program.command("policy").description("Inspect and edit site policies");
+
+policy
+  .command("list")
+  .description("List configured site policies")
+  .action(async () => {
+    printDecision(await listPolicies());
+  });
+
+policy
+  .command("show")
+  .description("Show one site policy")
+  .argument("<site>", "Site id")
+  .action(async (site: string) => {
+    printDecision(await showPolicy(site));
+  });
+
+policy
+  .command("edit")
+  .description("Edit one site policy with $EDITOR")
+  .argument("<site>", "Site id")
+  .action(async (site: string) => {
+    printDecision(await editPolicy(site));
   });
 
 program
