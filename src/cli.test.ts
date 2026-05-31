@@ -51,6 +51,34 @@ describe("cli setup", () => {
   });
 });
 
+describe("cli teardown", () => {
+  it("prints a non-destructive plan by default", async () => {
+    const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-teardown-"));
+    await mkdir(join(home, "sessions"), { recursive: true });
+    await writeFile(join(home, "sessions", "sess_test.json"), "{}\n");
+
+    const { stdout } = await execFileAsync(process.execPath, ["dist/cli.js", "teardown", "--sessions"], {
+      env: {
+        ...process.env,
+        GATED_AGENT_BROWSER_HOME: home,
+      },
+    });
+
+    const parsed = JSON.parse(stdout) as {
+      ok: true;
+      dryRun: boolean;
+      selected: string[];
+      categories: { sessions: { selected: boolean; removed: boolean; count: number } };
+    };
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.dryRun, true);
+    assert.deepEqual(parsed.selected, ["sessions"]);
+    assert.deepEqual(parsed.categories.sessions, { selected: true, removed: false, count: 1 });
+    assert.deepEqual(await readdir(join(home, "sessions")), ["sess_test.json"]);
+    assert.doesNotMatch(stdout, /gated-agent-browser-cli-teardown-|profiles\//);
+  });
+});
+
 describe("cli policy", () => {
   it("lists and shows policies from GATED_AGENT_BROWSER_HOME", async () => {
     const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-policy-"));
