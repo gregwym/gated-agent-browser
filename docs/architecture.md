@@ -386,6 +386,20 @@ Fixture tests use an in-memory fake adapter that simulates navigation and
 redirects without network access or real browser binaries. The future
 `agent-browser` subprocess adapter should implement the same interface.
 
+The initial `agent-browser` subprocess adapter pins the npm package to
+`agent-browser@0.27.0`, verified on 2026-05-31 with:
+
+```sh
+npm view agent-browser@0.27.0 version bin --json
+npm exec --package agent-browser@0.27.0 -- agent-browser --help
+```
+
+Only the broker-approved action subset is mapped to subprocess arguments. Broad
+upstream commands such as `eval`, `cookies`, `storage`, `connect`, `network`,
+`dashboard`, `chat`, `upload`, and `download` remain outside the adapter mapping.
+Adapter failures are converted to structured broker blocks without including raw
+stderr, profile paths, CDP URLs, cookies, or storage values.
+
 ## Login Flow
 
 `login <url>` is human-facing:
