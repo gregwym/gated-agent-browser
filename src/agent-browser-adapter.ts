@@ -131,6 +131,10 @@ function actionArgs(request: BrokerRequest): string[] {
       return request.value ? ["scroll", targetScrollDirection(request.target), request.value] : ["scroll", targetScrollDirection(request.target)];
     case "screenshotSelector":
       return ["screenshot", "--selector", targetSelectorOrRef(request.target)];
+    case "submitForm":
+    case "download":
+    case "upload":
+      throw new AgentBrowserAdapterError(`${request.action} is not mapped to agent-browser`);
     case "close":
       return ["close"];
   }

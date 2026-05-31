@@ -13,6 +13,9 @@ export type BrokerAction =
   | "wait"
   | "scroll"
   | "screenshotSelector"
+  | "submitForm"
+  | "download"
+  | "upload"
   | "close";
 
 export type BrokerRequestTarget =
