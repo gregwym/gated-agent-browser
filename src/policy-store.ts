@@ -26,6 +26,11 @@ export interface SavePolicyResult {
   path: string;
 }
 
+export interface ArchivePolicyResult {
+  site: string;
+  archived: boolean;
+}
+
 export async function listPolicies(layout: StorageLayout = storageLayout()): Promise<PolicySummary[]> {
   const entries = await readdir(layout.dirs.policies, { withFileTypes: true }).catch((error: unknown) => {
     if (isNodeError(error) && error.code === "ENOENT") {
@@ -55,6 +60,27 @@ export async function savePolicy(
   await mkdir(layout.dirs.policies, { recursive: true, mode: 0o700 });
   await writeFile(path, YAML.stringify(normalized), { mode: 0o600 });
   return { ok: true, site: normalized.site, saved: true, path: basename(path) };
+}
+
+export async function archivePolicy(
+  site: string,
+  options: { layout?: StorageLayout; archivedAt?: string } = {},
+): Promise<ArchivePolicyResult> {
+  const layout = options.layout ?? storageLayout();
+  const policyPath = policyFilePath(site, layout);
+  const timestamp = (options.archivedAt ?? new Date().toISOString()).replace(/[:.]/g, "-");
+  const archiveDir = join(layout.dirs.policies, "revoked");
+  const archivePath = join(archiveDir, `${site}.${timestamp}.yaml`);
+  await mkdir(archiveDir, { recursive: true, mode: 0o700 });
+  try {
+    await rename(policyPath, archivePath);
+    return { site, archived: true };
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") {
+      return { site, archived: false };
+    }
+    throw error;
+  }
 }
 
 export async function editPolicy(
