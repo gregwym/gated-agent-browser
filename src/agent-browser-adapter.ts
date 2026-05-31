@@ -131,6 +131,8 @@ function actionArgs(request: BrokerRequest): string[] {
       return request.value ? ["scroll", targetScrollDirection(request.target), request.value] : ["scroll", targetScrollDirection(request.target)];
     case "screenshotSelector":
       return ["screenshot", "--selector", targetSelectorOrRef(request.target)];
+    case "screenshotFullPage":
+      throw new AgentBrowserAdapterError("screenshotFullPage is not mapped to agent-browser");
     case "submitForm":
     case "download":
     case "upload":
