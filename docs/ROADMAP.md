@@ -2,9 +2,11 @@
 
 ## Current Milestone
 
-M1 — Policy-gated CLI MVP
+M4 — Setup Teardown And Release Hygiene
 
 ## M1 — Policy-gated CLI MVP
+
+Status: complete. Implemented through issues #1-#7 and #8-#13.
 
 Goal: an autonomous agent can use a narrow CLI surface that loads site policies,
 allows safe browsing actions, and returns structured block reasons before any
@@ -28,7 +30,10 @@ Exit criteria:
 
 ## M2 — Login And Brokered Sessions
 
-Goal: a human can perform a headed login while the agent receives only an opaque
+Status: complete for the local TypeScript broker contract. Implemented through
+issues #14-#17.
+
+Goal: a human can perform a login flow while the agent receives only an opaque
 session id and policy-bounded headless access.
 
 Expected scope:
@@ -41,6 +46,9 @@ Expected scope:
 
 ## M3 — Runtime Enforcement Fixtures
 
+Status: complete for deterministic local fixture coverage. Implemented through
+issues #22-#26.
+
 Goal: fixture tests prove that redirects, popups, iframes, downloads, uploads,
 and destructive selectors are blocked or mediated by policy.
 
@@ -52,3 +60,36 @@ Expected scope:
 - Download/upload denial tests.
 - Prompt-injection fixture page.
 
+## M4 — Setup Teardown And Release Hygiene
+
+Status: in progress.
+
+Goal: setup and teardown commands are explicit, redacted, and safe by default,
+and the docs match the implemented security boundary.
+
+Expected scope:
+
+- `setup` command for storage initialization and lightweight prerequisite
+  reporting.
+- `teardown` command with non-destructive default planning and explicit category
+  flags for removal.
+- README and roadmap alignment with shipped behavior.
+
+Exit criteria:
+
+- `npm run verify` passes locally and in CI.
+- Setup and teardown output does not reveal broker-owned paths.
+- Teardown does not remove data unless `--confirm` and category flags are both
+  present.
+- Docs clearly state current limits: TypeScript broker, strict directories, no
+  OS user or launchd isolation yet.
+
+## Later Milestones
+
+Planned but not yet claimed as implemented:
+
+- Real headed browser login wiring for manual low-risk account tests.
+- OS-specific installer/uninstaller for launchd or separate-user isolation.
+- One-time approval flow with expiry.
+- Remote headed login pairing.
+- Audit retention/rotation.
