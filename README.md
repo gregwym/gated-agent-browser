@@ -29,6 +29,8 @@ Requirements:
 
 - Node.js 24+
 - npm
+- `agent-browser@0.27.0` is pinned as an npm dependency for subprocess adapter
+  development. Real browser execution also needs `agent-browser install`.
 
 Install dependencies:
 

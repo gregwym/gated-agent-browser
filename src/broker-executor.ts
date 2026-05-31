@@ -21,7 +21,20 @@ export class PolicyBrokerExecutor {
       }
     }
 
-    const adapterResult = await this.adapter.perform(request);
+    let adapterResult;
+    try {
+      adapterResult = await this.adapter.perform(request);
+    } catch {
+      return blockedResponse(request, {
+        ok: false,
+        blocked: {
+          rule: "adapter.browser",
+          reason: "Browser adapter failed before completing the action",
+          action: request.action,
+        },
+      });
+    }
+
     if (adapterResult.finalUrl) {
       const postActionDecision = decideUrl(this.policy, adapterResult.finalUrl);
       if (!postActionDecision.ok) {
