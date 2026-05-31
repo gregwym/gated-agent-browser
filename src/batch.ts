@@ -1,12 +1,13 @@
 import { readFile } from "node:fs/promises";
 import {
-  allowedResponse,
   blockedResponse,
   type BrokerAction,
   type BrokerRequest,
   type BrokerRequestTarget,
   type BrokerResponse,
 } from "./broker.js";
+import { PolicyBrokerExecutor } from "./broker-executor.js";
+import type { BrowserAdapter } from "./browser-adapter.js";
 import { decideAction, decideUrl, type SitePolicy } from "./policy.js";
 
 export interface BrowseBatchInput {
@@ -88,9 +89,9 @@ export function normalizeBatchInput(value: unknown): BrowseBatchInput {
   };
 }
 
-export class DryRunExecutor implements BatchExecutor {
-  async execute(request: BrokerRequest): Promise<BrokerResponse> {
-    return allowedResponse(request);
+export class AdapterBatchExecutor extends PolicyBrokerExecutor {
+  constructor(policy: SitePolicy, adapter: BrowserAdapter) {
+    super(policy, adapter);
   }
 }
 
