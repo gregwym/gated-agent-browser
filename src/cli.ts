@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { DryRunExecutor, loadBatchInput, runBatch } from "./batch.js";
 import { decideAction, decideUrl, loadPolicy } from "./policy.js";
 import { editPolicy, listPolicies, showPolicy } from "./policy-store.js";
 import { initializeStorage } from "./storage.js";
@@ -41,6 +42,23 @@ policy
   .argument("<site>", "Site id")
   .action(async (site: string) => {
     printDecision(await editPolicy(site));
+  });
+
+const browse = program.command("browse").description("Run policy-gated browser commands");
+
+browse
+  .command("batch")
+  .description("Validate and run a batch of browse commands")
+  .requiredOption("--policy <path>", "Path to a site policy YAML file")
+  .requiredOption("--json <path>", "Path to batch JSON, or - for stdin")
+  .action(async (options: { policy: string; json: string }) => {
+    const sitePolicy = await loadPolicy(options.policy);
+    const input = await loadBatchInput(options.json);
+    const result = await runBatch(sitePolicy, input, new DryRunExecutor());
+    printDecision(result);
+    if (!result.ok) {
+      process.exitCode = 2;
+    }
   });
 
 program
