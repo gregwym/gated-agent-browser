@@ -60,3 +60,11 @@ GATED_AGENT_BROWSER_HOME=/tmp/gated-agent-browser-dev node dist/cli.js init
 
 The `init` command creates broker-owned storage directories with restrictive
 permissions and does not print profile or session directory paths.
+
+Inspect policies:
+
+```sh
+node dist/cli.js policy list
+node dist/cli.js policy show github.com
+EDITOR=vim node dist/cli.js policy edit github.com
+```
