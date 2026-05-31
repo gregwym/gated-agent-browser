@@ -62,3 +62,49 @@ actions:
     assert.equal(JSON.parse(show.stdout).site, "github.com");
   });
 });
+
+describe("cli browse batch", () => {
+  it("returns a structured block and exit code 2 for denied batches", async () => {
+    const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-batch-"));
+    const policyPath = join(home, "policy.yaml");
+    const batchPath = join(home, "batch.json");
+    await writeFile(
+      policyPath,
+      `version: 1
+site: github.com
+canonicalOrigin: https://github.com
+origins:
+  allow:
+    - https://github.com/gregwym/gated-agent-browser/**
+actions:
+  navigate: allow
+  fill: requireExplicitAllow
+`,
+    );
+    await writeFile(
+      batchPath,
+      JSON.stringify({
+        siteId: "github.com",
+        commands: [
+          {
+            action: "navigate",
+            target: { kind: "url", url: "https://github.com/gregwym/gated-agent-browser/issues" },
+          },
+          { action: "fill", target: { kind: "selector", selector: "input[name=q]" }, value: "text" },
+        ],
+      }),
+    );
+
+    await assert.rejects(
+      async () => execFileAsync(process.execPath, ["dist/cli.js", "browse", "batch", "--policy", policyPath, "--json", batchPath]),
+      (error: unknown) => {
+        assert.equal((error as { code?: number }).code, 2);
+        const stdout = (error as { stdout?: string }).stdout ?? "";
+        const parsed = JSON.parse(stdout) as { blocked: { rule: string; commandIndex: number } };
+        assert.equal(parsed.blocked.rule, "actions.fill");
+        assert.equal(parsed.blocked.commandIndex, 1);
+        return true;
+      },
+    );
+  });
+});

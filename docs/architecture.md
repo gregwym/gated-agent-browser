@@ -323,6 +323,50 @@ shape:
 Audit targets should avoid storing sensitive values. For example, keypress audit
 events record `{ "kind": "key" }` rather than the exact key value.
 
+### Batch JSON
+
+`browse batch --json` accepts a single JSON object with site/session context and
+an ordered command list:
+
+```json
+{
+  "siteId": "github.com",
+  "sessionId": "sess_123",
+  "commands": [
+    {
+      "action": "navigate",
+      "target": {
+        "kind": "url",
+        "url": "https://github.com/gregwym/gated-agent-browser/issues"
+      }
+    },
+    {
+      "action": "readText",
+      "target": {
+        "kind": "selector",
+        "selector": "main"
+      }
+    }
+  ]
+}
+```
+
+The broker must validate every command before execution. If any action or target
+URL is denied, the entire batch is rejected and no command executes:
+
+```json
+{
+  "ok": false,
+  "blocked": {
+    "rule": "actions.fill",
+    "reason": "Action requires an explicit policy grant",
+    "commandIndex": 1,
+    "requestId": "batch_2",
+    "action": "fill"
+  }
+}
+```
+
 ## Login Flow
 
 `login <url>` is human-facing:
