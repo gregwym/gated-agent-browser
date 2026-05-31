@@ -5,6 +5,7 @@ import { FakeBrowserAdapter } from "./browser-adapter.js";
 import { startLogin } from "./login.js";
 import { decideAction, decideUrl, loadPolicy } from "./policy.js";
 import { editPolicy, listPolicies, showPolicy } from "./policy-store.js";
+import { revokeSite } from "./revoke.js";
 import { initializeStorage } from "./storage.js";
 
 const program = new Command();
@@ -27,6 +28,14 @@ program
   .argument("<url>", "Initial login URL")
   .action(async (url: string) => {
     printDecision(await startLogin(url));
+  });
+
+program
+  .command("revoke")
+  .description("Revoke a site's sessions and policy")
+  .argument("<site>", "Site id")
+  .action(async (site: string) => {
+    printDecision(await revokeSite(site));
   });
 
 const policy = program.command("policy").description("Inspect and edit site policies");

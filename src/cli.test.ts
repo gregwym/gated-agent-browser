@@ -104,6 +104,29 @@ describe("cli login", () => {
   });
 });
 
+describe("cli revoke", () => {
+  it("revokes site sessions and policy without broker-owned paths", async () => {
+    const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-revoke-"));
+    const env = {
+      ...process.env,
+      GATED_AGENT_BROWSER_HOME: home,
+    };
+    const login = await execFileAsync(process.execPath, ["dist/cli.js", "login", "https://github.com/login"], { env });
+    const sessionId = (JSON.parse(login.stdout) as { session: { sessionId: string } }).session.sessionId;
+    const revoke = await execFileAsync(process.execPath, ["dist/cli.js", "revoke", "github.com"], { env });
+    const parsed = JSON.parse(revoke.stdout) as {
+      ok: true;
+      revokedSessions: string[];
+      policyArchived: boolean;
+    };
+
+    assert.equal(parsed.ok, true);
+    assert.deepEqual(parsed.revokedSessions, [sessionId]);
+    assert.equal(parsed.policyArchived, true);
+    assert.doesNotMatch(revoke.stdout, /gated-agent-browser-cli-revoke-|profiles\//);
+  });
+});
+
 describe("cli browse batch", () => {
   it("returns a structured block and exit code 2 for denied batches", async () => {
     const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-batch-"));
