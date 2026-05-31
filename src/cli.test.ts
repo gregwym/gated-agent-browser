@@ -30,6 +30,27 @@ describe("cli init", () => {
   });
 });
 
+describe("cli setup", () => {
+  it("sets up storage and reports prerequisites without broker-owned paths", async () => {
+    const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-setup-"));
+    const { stdout } = await execFileAsync(process.execPath, ["dist/cli.js", "setup"], {
+      env: {
+        ...process.env,
+        GATED_AGENT_BROWSER_HOME: home,
+      },
+    });
+
+    const parsed = JSON.parse(stdout) as {
+      ok: true;
+      prerequisites: { agentBrowserDependency: { configured: boolean; expectedVersion: string } };
+    };
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.prerequisites.agentBrowserDependency.configured, true);
+    assert.equal(parsed.prerequisites.agentBrowserDependency.expectedVersion, "0.27.0");
+    assert.doesNotMatch(stdout, /gated-agent-browser-cli-setup-|profiles\//);
+  });
+});
+
 describe("cli policy", () => {
   it("lists and shows policies from GATED_AGENT_BROWSER_HOME", async () => {
     const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-policy-"));

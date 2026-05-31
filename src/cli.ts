@@ -7,6 +7,7 @@ import { startLogin } from "./login.js";
 import { decideAction, decideUrl, loadPolicy } from "./policy.js";
 import { editPolicy, listPolicies, showPolicy } from "./policy-store.js";
 import { revokeSite } from "./revoke.js";
+import { setup } from "./setup.js";
 import { initializeStorage } from "./storage.js";
 
 const program = new Command();
@@ -21,6 +22,13 @@ program
   .description("Initialize gated-agent-browser local storage")
   .action(async () => {
     printDecision(await initializeStorage());
+  });
+
+program
+  .command("setup")
+  .description("Set up local gated-agent-browser storage and report prerequisites")
+  .action(async () => {
+    printDecision(await setup());
   });
 
 program
