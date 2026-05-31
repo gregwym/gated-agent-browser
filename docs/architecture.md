@@ -242,6 +242,87 @@ For each headless action:
 If a post-action check fails, the broker should close the offending tab or
 session before returning the block.
 
+## Broker Contract
+
+The agent-facing CLI translates supported commands into typed broker requests.
+The broker contract is intentionally narrower than the upstream `agent-browser`
+command set:
+
+```ts
+type BrokerAction =
+  | "navigate"
+  | "click"
+  | "fill"
+  | "type"
+  | "press"
+  | "readText"
+  | "snapshot"
+  | "getTitle"
+  | "getUrl"
+  | "wait"
+  | "scroll"
+  | "screenshotSelector"
+  | "close";
+
+interface BrokerRequest {
+  requestId: string;
+  siteId: string;
+  sessionId?: string;
+  action: BrokerAction;
+  target:
+    | { kind: "url"; url: string }
+    | { kind: "selector"; selector: string }
+    | { kind: "ref"; ref: string }
+    | { kind: "key"; key: string }
+    | { kind: "none" };
+  value?: string;
+  createdAt: string;
+}
+```
+
+Allowed responses include the original request id, action, and a typed result.
+Blocked responses include the original request id, action, site/session context,
+and the responsible policy rule:
+
+```json
+{
+  "ok": false,
+  "requestId": "req_123",
+  "action": "navigate",
+  "siteId": "github.com",
+  "sessionId": "sess_123",
+  "blocked": {
+    "rule": "origins.allow",
+    "reason": "Navigation left allowed URL scope",
+    "url": "https://example.net/"
+  }
+}
+```
+
+Every broker response should be convertible to an audit event with this stable
+shape:
+
+```json
+{
+  "type": "broker.request",
+  "timestamp": "2026-05-30T00:00:01.000Z",
+  "requestId": "req_123",
+  "siteId": "github.com",
+  "sessionId": "sess_123",
+  "action": "navigate",
+  "target": {
+    "kind": "url",
+    "url": "https://github.com/gregwym/gated-agent-browser/issues"
+  },
+  "outcome": "blocked",
+  "policyRule": "origins.allow",
+  "reason": "Navigation left allowed URL scope"
+}
+```
+
+Audit targets should avoid storing sensitive values. For example, keypress audit
+events record `{ "kind": "key" }` rather than the exact key value.
+
 ## Login Flow
 
 `login <url>` is human-facing:
