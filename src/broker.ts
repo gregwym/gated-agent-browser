@@ -13,6 +13,7 @@ export type BrokerAction =
   | "wait"
   | "scroll"
   | "screenshotSelector"
+  | "screenshotFullPage"
   | "submitForm"
   | "download"
   | "upload"

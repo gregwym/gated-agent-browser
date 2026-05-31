@@ -222,6 +222,7 @@ function isBrokerAction(value: string): value is BrokerAction {
     "wait",
     "scroll",
     "screenshotSelector",
+    "screenshotFullPage",
     "submitForm",
     "download",
     "upload",

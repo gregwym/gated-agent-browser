@@ -21,6 +21,11 @@ export class PolicyBrokerExecutor {
       }
     }
 
+    const selectorDecision = decideSelector(this.policy, request);
+    if (selectorDecision) {
+      return selectorDecision;
+    }
+
     let adapterResult;
     try {
       adapterResult = await this.adapter.perform(request);
@@ -56,6 +61,52 @@ export class PolicyBrokerExecutor {
 
     return allowedResponse(request, adapterResult.result);
   }
+}
+
+function decideSelector(policy: SitePolicy, request: BrokerRequest): BrokerResponse | null {
+  if (request.target.kind !== "selector") {
+    return null;
+  }
+  if (request.action === "click" && matchesSelectorPolicy(request.target.selector, policy.destructiveSelectors ?? [])) {
+    return blockedResponse(request, {
+      ok: false,
+      blocked: {
+        rule: "destructiveSelectors",
+        reason: "Selector matches a destructive policy pattern",
+        action: request.action,
+      },
+    });
+  }
+  if (
+    request.action === "screenshotSelector" &&
+    matchesSelectorPolicy(request.target.selector, policy.sensitiveSelectors ?? [])
+  ) {
+    return blockedResponse(request, {
+      ok: false,
+      blocked: {
+        rule: "sensitiveSelectors",
+        reason: "Selector matches a sensitive policy pattern",
+        action: request.action,
+      },
+    });
+  }
+  return null;
+}
+
+function matchesSelectorPolicy(selector: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => selector === pattern || selector.toLowerCase().includes(selectorNeedle(pattern)));
+}
+
+function selectorNeedle(pattern: string): string {
+  const dataTestIdContains = /\[data-testid\*="([^"]+)"/i.exec(pattern)?.[1];
+  if (dataTestIdContains) {
+    return dataTestIdContains.toLowerCase();
+  }
+  const textContains = /:has-text\("([^"]+)"\)/i.exec(pattern)?.[1];
+  if (textContains) {
+    return textContains.toLowerCase();
+  }
+  return pattern.toLowerCase();
 }
 
 function blockUrl(

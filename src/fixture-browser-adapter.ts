@@ -22,6 +22,10 @@ export class FixtureBrowserAdapter implements BrowserAdapter {
       return { finalUrl: this.currentUrl, result: { kind: "url", url: this.currentUrl } };
     }
 
+    if (request.action === "screenshotSelector") {
+      return { finalUrl: this.currentUrl, result: { kind: "screenshot", mimeType: "image/png", data: "fixture" } };
+    }
+
     return { finalUrl: this.currentUrl, result: { kind: "empty" } };
   }
 
