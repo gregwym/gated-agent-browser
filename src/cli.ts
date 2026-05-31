@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { AdapterBatchExecutor, loadBatchInput, runBatch } from "./batch.js";
 import { FakeBrowserAdapter } from "./browser-adapter.js";
+import { startLogin } from "./login.js";
 import { decideAction, decideUrl, loadPolicy } from "./policy.js";
 import { editPolicy, listPolicies, showPolicy } from "./policy-store.js";
 import { initializeStorage } from "./storage.js";
@@ -18,6 +19,14 @@ program
   .description("Initialize gated-agent-browser local storage")
   .action(async () => {
     printDecision(await initializeStorage());
+  });
+
+program
+  .command("login")
+  .description("Start a human headed login draft flow")
+  .argument("<url>", "Initial login URL")
+  .action(async (url: string) => {
+    printDecision(await startLogin(url));
   });
 
 const policy = program.command("policy").description("Inspect and edit site policies");

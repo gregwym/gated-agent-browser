@@ -1,4 +1,4 @@
-import { readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { spawn } from "node:child_process";
 import YAML from "yaml";
@@ -19,6 +19,13 @@ export interface PolicyEditResult {
   saved: true;
 }
 
+export interface SavePolicyResult {
+  ok: true;
+  site: string;
+  saved: true;
+  path: string;
+}
+
 export async function listPolicies(layout: StorageLayout = storageLayout()): Promise<PolicySummary[]> {
   const entries = await readdir(layout.dirs.policies, { withFileTypes: true }).catch((error: unknown) => {
     if (isNodeError(error) && error.code === "ENOENT") {
@@ -36,6 +43,18 @@ export async function listPolicies(layout: StorageLayout = storageLayout()): Pro
 
 export async function showPolicy(site: string, layout: StorageLayout = storageLayout()): Promise<SitePolicy> {
   return loadPolicy(policyFilePath(site, layout));
+}
+
+export async function savePolicy(
+  policy: SitePolicy,
+  options: { layout?: StorageLayout } = {},
+): Promise<SavePolicyResult> {
+  const layout = options.layout ?? storageLayout();
+  const normalized = normalizePolicy(policy);
+  const path = policyFilePath(normalized.site, layout);
+  await mkdir(layout.dirs.policies, { recursive: true, mode: 0o700 });
+  await writeFile(path, YAML.stringify(normalized), { mode: 0o600 });
+  return { ok: true, site: normalized.site, saved: true, path: basename(path) };
 }
 
 export async function editPolicy(

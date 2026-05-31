@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -60,6 +60,47 @@ actions:
 
     const show = await execFileAsync(process.execPath, ["dist/cli.js", "policy", "show", "github.com"], { env });
     assert.equal(JSON.parse(show.stdout).site, "github.com");
+  });
+});
+
+describe("cli login", () => {
+  it("prints an opaque session and policy draft without broker-owned paths", async () => {
+    const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-login-"));
+    const { stdout } = await execFileAsync(process.execPath, ["dist/cli.js", "login", "https://github.com/login"], {
+      env: {
+        ...process.env,
+        GATED_AGENT_BROWSER_HOME: home,
+      },
+    });
+
+    const parsed = JSON.parse(stdout) as {
+      ok: true;
+      siteId: string;
+      session: { sessionId: string; profileId: string; login: { resetSiteDataRequested: boolean } };
+      policy: { path: string };
+    };
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.siteId, "github.com");
+    assert.match(parsed.session.sessionId, /^sess_/);
+    assert.match(parsed.session.profileId, /^prof_/);
+    assert.equal(parsed.session.login.resetSiteDataRequested, true);
+    assert.equal(parsed.policy.path, "github.com.yaml");
+    assert.doesNotMatch(stdout, /gated-agent-browser-cli-login-|profiles\//);
+    assert.deepEqual(await readdir(join(home, "policies")), ["github.com.yaml"]);
+  });
+
+  it("exits non-zero for invalid login urls", async () => {
+    const home = await mkdtemp(join(tmpdir(), "gated-agent-browser-cli-login-invalid-"));
+    await assert.rejects(
+      () =>
+        execFileAsync(process.execPath, ["dist/cli.js", "login", "file:///tmp/profile"], {
+          env: {
+            ...process.env,
+            GATED_AGENT_BROWSER_HOME: home,
+          },
+        }),
+      /absolute http or https URL/,
+    );
   });
 });
 
