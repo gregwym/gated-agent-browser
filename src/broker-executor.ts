@@ -36,18 +36,43 @@ export class PolicyBrokerExecutor {
     }
 
     if (adapterResult.finalUrl) {
-      const postActionDecision = decideUrl(this.policy, adapterResult.finalUrl);
-      if (!postActionDecision.ok) {
-        return blockedResponse(request, {
-          ok: false,
-          blocked: {
-            ...postActionDecision.blocked,
-            reason: "Post-action URL is outside the allowed policy scope",
-          },
-        });
+      const blocked = blockUrl(request, this.policy, adapterResult.finalUrl, "Post-action URL is outside the allowed policy scope");
+      if (blocked) {
+        return blocked;
+      }
+    }
+
+    for (const observedUrl of adapterResult.observedUrls ?? []) {
+      const blocked = blockUrl(
+        request,
+        this.policy,
+        observedUrl.url,
+        `Observed ${observedUrl.kind} URL is outside the allowed policy scope`,
+      );
+      if (blocked) {
+        return blocked;
       }
     }
 
     return allowedResponse(request, adapterResult.result);
   }
+}
+
+function blockUrl(
+  request: BrokerRequest,
+  policy: SitePolicy,
+  url: string,
+  reason: string,
+): BrokerResponse | null {
+  const decision = decideUrl(policy, url);
+  if (decision.ok) {
+    return null;
+  }
+  return blockedResponse(request, {
+    ok: false,
+    blocked: {
+      ...decision.blocked,
+      reason,
+    },
+  });
 }

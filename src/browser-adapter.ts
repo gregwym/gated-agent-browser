@@ -6,7 +6,13 @@ export interface BrowserAdapter {
 
 export interface BrowserAdapterResult {
   finalUrl?: string;
+  observedUrls?: ObservedBrowserUrl[];
   result?: BrokerResult;
+}
+
+export interface ObservedBrowserUrl {
+  kind: "navigation" | "popup" | "iframe";
+  url: string;
 }
 
 export class FakeBrowserAdapter implements BrowserAdapter {
