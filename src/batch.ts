@@ -222,6 +222,9 @@ function isBrokerAction(value: string): value is BrokerAction {
     "wait",
     "scroll",
     "screenshotSelector",
+    "submitForm",
+    "download",
+    "upload",
     "close",
   ].includes(value);
 }
